@@ -28,14 +28,14 @@ export default function Home() {
           to="/quiz"
           className="w-full max-w-xs px-6 py-3 bg-blue-600 text-white rounded-md shadow hover:bg-blue-500 transition text-center"
         >
-          Start Quiz
+          Start quiz
         </Link>
 
         <Link
           to="/history"
           className="w-full max-w-xs px-6 py-3 bg-white text-black rounded-md shadow hover:bg-gray-200 transition text-center"
         >
-          View History
+          View history
         </Link>
       </div>
     </div>
