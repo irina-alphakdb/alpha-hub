@@ -506,8 +506,18 @@
       "options": [
         { "id": "a", "text": "-21!(`:zfile;17 2 6;10 20 30)", "isCorrect": false },
         { "id": "b", "text": "(`:zfile;17;2;6) set 10 20 30", "isCorrect": true },
-        { "id": "c", "d": ".z.zd:17 2 6;  (and then do set as normal)", "isCorrect": true },
-        { "id": "d", "text": ".z.zf:17 2 6; (and then do set as normal)", "isCorrect": false }
+        { "id": "c", "d": ".z.zd:17 2 6;  (and then use set as normal)", "isCorrect": true },
+        { "id": "d", "text": ".z.zf:17 2 6; (and then use set as normal)", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q52",
+      "question": "If I want to find out what compression parameters (if any) that a file `:zfile has, I can do:",
+      "options": [
+        { "id": "a", "text": "-19!`:zfile", "isCorrect": false },
+        { "id": "b", "text": "-31!`:zfile", "isCorrect": false },
+        { "id": "c", "d": "-21!`:zfile", "isCorrect": true },
+        { "id": "d", "text": "-29!`:zfile", "isCorrect": false }
       ]
     }
   ]
