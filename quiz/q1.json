@@ -79,6 +79,76 @@
         { "id": "c", "d": "`a.b", "isCorrect": false },
         { "id": "d", "text": "`:a/b/", "isCorrect": false }
       ]
+    },
+    {
+      "id": "q9",
+      "question": "If I have the dictionary d:`a`b!(1 2 3;10 20 30) - how would I return d with the 20 doubled to 40?",
+      "options": [
+        { "id": "a", "text": "@[d;(`b;1);*;2]", "isCorrect": false },
+        { "id": "b", "text": "d[`b;1]*2", "isCorrect": false },
+        { "id": "c", "d": ".[d;(`b;1);*;2]", "isCorrect": true },
+        { "id": "d", "text": ".[d;(`b;1);2*]", "isCorrect": true }
+      ]
+    },
+    {
+      "id": "q10",
+      "question": "Which of the following statement is true of aj[`sym`time;trade;quote] in order to optimise performance?",
+      "options": [
+        { "id": "a", "text": "The trade table should have time in ascending order", "isCorrect": false },
+        { "id": "b", "text": "The quote table should have the parted or grouped attribute on sym, and the sorted attribute on time", "isCorrect": false },
+        { "id": "c", "d": "The trade table should have the parted or grouped attribute on sym", "isCorrect": false },
+        { "id": "d", "text": "The quote table should have the parted or grouped attribute on sym. aj expects that time will be in ascending order within each sym.", "isCorrect": true }
+      ]
+    },
+    {
+      "id": "q11",
+      "question": "If I want to soft delete a column exchange from the trade table in a hdb, in each date/trade folder I would:",
+      "options": [
+        { "id": "a", "text": "Delete the exchange column file", "isCorrect": false },
+        { "id": "b", "text": "Remove exchange from the .d file", "isCorrect": true },
+        { "id": "c", "d": "Delete the .d file", "isCorrect": false },
+        { "id": "d", "text": "Delete the exchange column file and remove exchange from the .d file", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q12",
+      "question": "To initilise a tickerplant binary log file .u.L, to which I have opened a handle .u.l, I should do:",
+      "options": [
+        { "id": "a", "text": ".u.l 0: ()", "isCorrect": false },
+        { "id": "b", "text": ".u.l set ()", "isCorrect": false },
+        { "id": "c", "d": ".u.l set enlist ()", "isCorrect": false },
+        { "id": "d", "text": ".u.L set ()", "isCorrect": true }
+      ]
+    },
+    {
+      "id": "q13",
+      "question": "To write some data for the trade table to a tickerplant binary log file .u.L, to which I have opened a handle .u.l, I should do:",
+      "options": [
+        { "id": "a", "text": ".u.L 0: enlist(`upd;`trade;x)", "isCorrect": false },
+        { "id": "b", "text": ".u.l 0: enlist(`upd;`trade;x)", "isCorrect": false },
+        { "id": "c", "d": ".u.l enlist(`upd;`trade;x)", "isCorrect": true },
+        { "id": "d", "text": ".u.L (`upd;`trade;x)", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q14",
+      "question": "To add the symbols `A`B to a symbol vector file `:sym on disk, I can do:",
+      "options": [
+        { "id": "a", "text": "`:sym$`A`B", "isCorrect": false },
+        { "id": "b", "text": "`:sym,:`A`B", "isCorrect": false },
+        { "id": "c", "d": "@[`:.;`sym;,;`A`B]", "isCorrect": true },
+        { "id": "d", "text": "`sym?`A`B", "isCorrect": true }
+      ]
+    },
+    {
+      "id": "q15",
+      "question": "Which of the following is true:",
+      "options": [
+        { "id": "a", "text": "upsert works only when the left argument is a keyed table", "isCorrect": true },
+        { "id": "b", "text": "insert may fail unless the left argument is an unkeyed table name", "isCorrect": false },
+        { "id": "c", "d": "insert expects the right argument to be a table or a list of column data", "isCorrect": true },
+        { "id": "d", "text": "upsert epects the right argument to be a table or a list of row data", "isCorrect": true }
+      ]
     }
   ]
 }
