@@ -22,7 +22,7 @@
     },
     {
       "id": "q3",
-      "question": "How might I get the unique elements across two lists L1 and L2?",
+      "question": "How might I get the unique universe of two lists L1 and L2?",
       "options": [
         { "id": "a", "text": "L1 inter L2", "isCorrect": false },
         { "id": "b", "text": "L1,L2", "isCorrect": false },
@@ -92,7 +92,7 @@
     },
     {
       "id": "q10",
-      "question": "Which of the following statement is true of aj[`sym`time;trade;quote] in order to optimise performance?",
+      "question": "Which of the following statements is true of aj[`sym`time;trade;quote] in order to optimise performance?",
       "options": [
         { "id": "a", "text": "The trade table should have time in ascending order", "isCorrect": false },
         { "id": "b", "text": "The quote table should have the parted or grouped attribute on sym, and the sorted attribute on time", "isCorrect": false },
@@ -102,7 +102,7 @@
     },
     {
       "id": "q11",
-      "question": "If I want to soft delete a column exchange from the trade table in a hdb, in each date/trade folder I would:",
+      "question": "If I want to soft delete a column exchange from the trade table in a hdb, in each date/trade folder I should:",
       "options": [
         { "id": "a", "text": "Delete the exchange column file", "isCorrect": false },
         { "id": "b", "text": "Remove exchange from the .d file", "isCorrect": true },
@@ -124,7 +124,7 @@
       "id": "q13",
       "question": "To write some data for the trade table to a tickerplant binary log file .u.L, to which I have opened a handle .u.l, I should do:",
       "options": [
-        { "id": "a", "text": ".u.L 0: enlist(`upd;`trade;x)", "isCorrect": false },
+        { "id": "a", "text": ".u.L 0: (`upd;`trade;x)", "isCorrect": false },
         { "id": "b", "text": ".u.l 0: enlist(`upd;`trade;x)", "isCorrect": false },
         { "id": "c", "d": ".u.l enlist(`upd;`trade;x)", "isCorrect": true },
         { "id": "d", "text": ".u.L (`upd;`trade;x)", "isCorrect": false }
@@ -318,6 +318,186 @@
         { "id": "c", "d": "-2!L", "isCorrect": true },
         { "id": "b", "text": "att L", "isCorrect": false },
         { "id": "d", "text": "attr L", "isCorrect": true }
+      ]
+    },
+    {
+      "id": "q33",
+      "question": "What is the significance of enlist in the expression (\"SSY\";enlist\",\")0: `:trade.csv",
+      "options": [
+        { "id": "a", "text": "It initalises the csv file for loading", "isCorrect": false },
+        { "id": "c", "d": "It tells q that the first row is to be skipped", "isCorrect": false },
+        { "id": "b", "text": "It tells q that the first row is to be used for the table headers", "isCorrect": true },
+        { "id": "d", "text": "The delimiters must always be a list, and enlist ensures that it is", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q34",
+      "question": "Which .z method should I define if I want custom code to be run on a synchronous message?",
+      "options": [
+        { "id": "a", "text": ".z.s", "isCorrect": false },
+        { "id": "c", "d": ".z.ps", "isCorrect": false },
+        { "id": "b", "text": ".z.sync", "isCorrect": false },
+        { "id": "d", "text": ".z.pg", "isCorrect": true }
+      ]
+    },
+    {
+      "id": "q35",
+      "question": "Which .z method should I define if I want custom code to be run on the closing of a handle?",
+      "options": [
+        { "id": "a", "text": ".z.hc", "isCorrect": false },
+        { "id": "c", "d": ".z.c", "isCorrect": false },
+        { "id": "b", "text": ".z.pc", "isCorrect": true },
+        { "id": "d", "text": ".z.h", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q36",
+      "question": "If I define .z.po, what argument will be passed in when it is triggered?",
+      "options": [
+        { "id": "a", "text": "The function/args that the remote caller has run", "isCorrect": false },
+        { "id": "c", "d": "The current time", "isCorrect": false },
+        { "id": "b", "text": "The handle to the remote caller", "isCorrect": true },
+        { "id": "d", "text": "No argument / identify (::)", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q37",
+      "question": "If I define .z.ps, what argument will be passed in when it is triggered?",
+      "options": [
+        { "id": "a", "text": "The function/args that the remote caller has run", "isCorrect": true },
+        { "id": "c", "d": "The current time", "isCorrect": false },
+        { "id": "b", "text": "The handle to the remote caller", "isCorrect": false },
+        { "id": "d", "text": "No argument / identify (::)", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q38",
+      "question": "If I define .z.ts, what argument will be passed in when it is triggered?",
+      "options": [
+        { "id": "a", "text": "The function/args that the remote caller has run", "isCorrect": false },
+        { "id": "c", "d": "The current time", "isCorrect": true },
+        { "id": "b", "text": "The handle to the remote caller", "isCorrect": false },
+        { "id": "d", "text": "No argument / identify (::)", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q39",
+      "question": "Which of the following will add the numbers 4 and 5 together?",
+      "options": [
+        { "id": "a", "text": "+[4;5]", "isCorrect": true },
+        { "id": "c", "d": "get(4+;5)", "isCorrect": true },
+        { "id": "b", "text": "get\"4+5\"", "isCorrect": true },
+        { "id": "d", "text": "0(+;4;5)", "isCorrect": true }
+      ]
+    },
+    {
+      "id": "q40",
+      "question": "Which of the following will add the numbers 4 and 5 together?",
+      "options": [
+        { "id": "a", "text": "+[4;5]", "isCorrect": true },
+        { "id": "c", "d": "get(+4;5)", "isCorrect": false },
+        { "id": "b", "text": "get\"4+5\"", "isCorrect": true },
+        { "id": "d", "text": "0(+;4;5)", "isCorrect": true }
+      ]
+    },
+    {
+      "id": "q41",
+      "question": "Which of the following will allow me to defer my response to a client?",
+      "options": [
+        { "id": "a", "text": "-21!", "isCorrect": false },
+        { "id": "c", "d": "-29!", "isCorrect": false },
+        { "id": "b", "text": "-30!", "isCorrect": true },
+        { "id": "d", "text": "-31!", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q42",
+      "question": "What is the result of: type 8 9h",
+      "options": [
+        { "id": "a", "text": "6", "isCorrect": false },
+        { "id": "c", "d": "5", "isCorrect": false },
+        { "id": "b", "text": "5h", "isCorrect": true },
+        { "id": "d", "text": "6h", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q43",
+      "question": "What is the result of: type `a`b!1 2`",
+      "options": [
+        { "id": "a", "text": "99h", "isCorrect": true },
+        { "id": "c", "d": "98h", "isCorrect": false },
+        { "id": "b", "text": "-99h", "isCorrect": false },
+        { "id": "d", "text": "-98h", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q44",
+      "question": "What is the result of: \"x\"$9 10",
+      "options": [
+        { "id": "a", "text": "0x0910", "isCorrect": false },
+        { "id": "c", "d": "0x0901", "isCorrect": false },
+        { "id": "b", "text": "0x091a", "isCorrect": false },
+        { "id": "d", "text": "0x090a", "isCorrect": true }
+      ]
+    },
+    {
+      "id": "q45",
+      "question": "+[4;5;6]",
+      "options": [
+        { "id": "a", "text": "'rank", "isCorrect": true },
+        { "id": "c", "d": "'type", "isCorrect": false },
+        { "id": "b", "text": "'length", "isCorrect": false },
+        { "id": "d", "text": "15", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q46",
+      "question": "What is the result of: 10 20,'30",
+      "options": [
+        { "id": "a", "text": "'length", "isCorrect": false },
+        { "id": "c", "d": "10 20 30", "isCorrect": false },
+        { "id": "b", "text": "(10 30;20 30)", "isCorrect": true },
+        { "id": "d", "text": "'rank", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q47",
+      "question": "What is contained in .z.x?",
+      "options": [
+        { "id": "a", "text": "The first argument to a function", "isCorrect": false },
+        { "id": "c", "d": "The command-line arguments as a list of strings", "isCorrect": true },
+        { "id": "b", "text": "The command-line arguments as a dictionary", "isCorrect": false },
+        { "id": "d", "text": "All the arguments to a function, as a list", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q48",
+      "question": "What is .z.p",
+      "options": [
+        { "id": "a", "text": "Local time with millisecond precision", "isCorrect": false },
+        { "id": "b", "text": "UTC time with nanosecond precision", "isCorrect": true },
+        { "id": "c", "d": "UTC time with millisecond precision", "isCorrect": false },
+        { "id": "d", "text": "Local time with nanosecond precision", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q49",
+      "question": "What is .z.p?",
+      "options": [
+        { "id": "a", "text": "Local time with millisecond precision", "isCorrect": false },
+        { "id": "b", "text": "UTC date+time with nanosecond precision", "isCorrect": true },
+        { "id": "c", "d": "UTC time with millisecond precision", "isCorrect": false },
+        { "id": "d", "text": "Local date+time with nanosecond precision", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q50",
+      "question": "What is .z.T?",
+      "options": [
+        { "id": "a", "text": "Local time with millisecond precision", "isCorrect": true },
+        { "id": "b", "text": "UTC date+time with nanosecond precision", "isCorrect": false },
+        { "id": "c", "d": "UTC time with millisecond precision", "isCorrect": false },
+        { "id": "d", "text": "Local date+time with nanosecond precision", "isCorrect": false }
       ]
     }
   ]
