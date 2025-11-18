@@ -299,6 +299,26 @@
         { "id": "b", "text": ".Q.W[]", "isCorrect": false },
         { "id": "d", "text": ".z.W", "isCorrect": true }
       ]
+    },
+    {
+      "id": "q31",
+      "question": "Given a handle h, how would I get a 'socket table' telling me what type of handle it is?",
+      "options": [
+        { "id": "a", "text": "-28!", "isCorrect": false },
+        { "id": "c", "d": "-29!", "isCorrect": false },
+        { "id": "b", "text": "-38!", "isCorrect": true },
+        { "id": "d", "text": "-39!", "isCorrect": false }
+      ]
+    },
+    {
+      "id": "q32",
+      "question": "Given a vector L, how would I programattically find out if it has an attribute?",
+      "options": [
+        { "id": "a", "text": "-3!L", "isCorrect": false },
+        { "id": "c", "d": "-2!L", "isCorrect": true },
+        { "id": "b", "text": "att L", "isCorrect": false },
+        { "id": "d", "text": "attr L", "isCorrect": true }
+      ]
     }
   ]
 }
