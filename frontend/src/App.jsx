@@ -1,21 +1,28 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+// src/App.jsx
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/Navbar";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import Quiz from "./pages/Quiz";
 import Results from "./pages/Results";
 import History from "./pages/History";
-import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ForgotPassword from "./pages/ForgotPassword";
+
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-[#03080B] text-white flex flex-col">
+    <div className="min-h-screen bg-[#03080B] text-white">
       <Navbar />
-
-      <main className="flex-1 pt-16">
+      <div className="pt-14"> {/* 56px navbar height */}
         <Routes>
           <Route path="/" element={<Login />} />
-
+          <Route
+          path="/forgot"
+          element={
+              <ForgotPassword />          
+            }
+        />
           <Route
             path="/home"
             element={
@@ -35,15 +42,6 @@ export default function App() {
           />
 
           <Route
-            path="/history"
-            element={
-              <ProtectedRoute>
-                <History />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
             path="/results"
             element={
               <ProtectedRoute>
@@ -52,9 +50,16 @@ export default function App() {
             }
           />
 
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <History />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
-      </main>
+      </div>
     </div>
   );
 }

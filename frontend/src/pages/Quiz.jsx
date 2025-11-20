@@ -1,265 +1,340 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { auth } from "../firebase";
-import { db } from "../firebase";
-import {
-  collection,
-  addDoc,
-  serverTimestamp,
-} from "firebase/firestore";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { auth, db } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { addDoc, collection } from "firebase/firestore";
+import { QUIZ_CONFIG, QUESTION_POOLS } from "../config";
 
-import quizData from "../../../quiz/linux1.json"; 
 export default function Quiz() {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  // All questions loaded from JSON
+  // topics were selected on Home page
+  const topics = location.state?.topics || ["git", "linux", "q"];
+
+  // ---------------- STATE ----------------
+  const [user, setUser] = useState(null);
   const [questions, setQuestions] = useState([]);
 
-  // Index of the current question
-  const [current, setCurrent] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Selected answers for current question:
-  // For radio: [optionId], for check: multiple optionIds
-  const [selected, setSelected] = useState([]);
+  const [selectedById, setSelectedById] = useState({}); // { qID: [optIDs] }
 
-  // Global score (but we will also use local scoreToSave to avoid async issues)
-  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState(0); // per-question timer
+  const perQuestionTime = QUIZ_CONFIG.timePerQuestionSeconds;
 
-  // Timer: 5 minutes = 300 seconds
-  const [timeLeft, setTimeLeft] = useState(300);
+  const [startedAt, setStartedAt] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ------------------------------
-  // Load questions from JSON once
-  // ------------------------------
+  // ---------------- AUTH ----------------
   useEffect(() => {
-    const list = quizData.questions;
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (!u) {
+        navigate("/", { replace: true });
+      } else {
+        setUser(u);
+      }
+    });
+    return () => unsub();
+  }, [navigate]);
 
-    // Shuffle and take up to 30 questions
-    const shuffled = [...list].sort(() => Math.random() - 0.5).slice(0, 30);
-
-    setQuestions(shuffled);
-  }, []);
-
-  // ------------------------------
-  // Countdown timer
-  // ------------------------------
+  // ---------------- PREPARE QUESTIONS ----------------
   useEffect(() => {
-    if (timeLeft <= 0) {
-      // Time is up: finish with current score
-      finishQuiz(score);
-      return;
+    // Build pool based on selected topics
+    let pool = [];
+    topics.forEach((t) => {
+      if (QUESTION_POOLS[t]) pool.push(...QUESTION_POOLS[t]);
+    });
+
+    // Shuffle
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+
+    // Limit count
+    const sliceCount = Math.min(
+      QUIZ_CONFIG.questionsPerAttempt,
+      shuffled.length
+    );
+
+    // Normalize
+    const normalized = shuffled.slice(0, sliceCount).map((q, qi) => {
+      const qid = q.id || `q_${qi}`;
+      return {
+        ...q,
+        id: qid,
+        options: q.options.map((opt, oi) => ({
+          id: opt.id || `${qid}_opt_${oi}`,
+          text: opt.text,
+          isCorrect: !!opt.isCorrect,
+        })),
+      };
+    });
+
+    setQuestions(normalized);
+    setStartedAt(new Date());
+  }, [topics]);
+
+  const totalQuestions = questions.length;
+  const currentQuestion = questions[currentIndex];
+
+  // ---------------- TIMER ----------------
+  useEffect(() => {
+    if (!currentQuestion) return;
+
+    setTimeLeft(perQuestionTime);
+
+    const id = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(id);
+
+          if (currentIndex === totalQuestions - 1) {
+            handleSubmit("time");
+          } else {
+            setCurrentIndex((i) =>
+              Math.min(i + 1, totalQuestions - 1)
+            );
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(id);
+  }, [currentIndex, totalQuestions, perQuestionTime]);
+
+  // ---------------- OPTION SELECT ----------------
+  const toggleOption = (questionId, optionId) => {
+    setSelectedById((prev) => {
+      const existing = new Set(prev[questionId] || []);
+      existing.has(optionId)
+        ? existing.delete(optionId)
+        : existing.add(optionId);
+
+      return {
+        ...prev,
+        [questionId]: Array.from(existing),
+      };
+    });
+  };
+
+  // ---------------- PROGRESS ----------------
+  const progressPercent = useMemo(() => {
+    if (!totalQuestions) return 0;
+    return Math.round(((currentIndex + 1) / totalQuestions) * 100);
+  }, [currentIndex, totalQuestions]);
+
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const goNext = () => {
+    if (currentIndex < totalQuestions - 1) {
+      setCurrentIndex((i) => i + 1);
     }
+  };
 
-    const t = setTimeout(() => setTimeLeft((prev) => prev - 1), 1000);
-    return () => clearTimeout(t);
-  }, [timeLeft, score]); // score in deps so we finish with latest value
-
-  // If questions not loaded yet
-  if (!questions.length) return null;
-
-  const q = questions[current];
-
-  // ------------------------------
-  // Radio selection (single choice)
-  // ------------------------------
-  function selectRadio(optionId) {
-    setSelected([optionId]);
-  }
-
-  // ------------------------------
-  // Checkbox selection (multi-choice)
-  // ------------------------------
-  function toggleCheckbox(optionId) {
-    if (selected.includes(optionId)) {
-      setSelected(selected.filter((id) => id !== optionId));
-    } else {
-      setSelected([...selected, optionId]);
+  const skipQuestion = () => {
+    if (currentIndex < totalQuestions - 1) {
+      setCurrentIndex((i) => i + 1);
     }
-  }
+  };
 
-  // ------------------------------
-  // Calculate score delta for this question
-  // Returns +1 or -2 (or 0 if nothing selected)
-  // ------------------------------
-  function getScoreDelta(question) {
-    const correctOptions = question.options
-      .filter((o) => o.isCorrect)
-      .map((o) => o.id);
+  // ---------------- SUBMIT ----------------
+  const handleSubmit = async (reason = "manual") => {
+    if (isSubmitting || !questions.length || !user) return;
 
-    if (!selected.length) {
-      // No answer: treat as wrong (or 0 if you prefer)
-      return -2;
-    }
+    setIsSubmitting(true);
+    const finishedAt = new Date();
 
-    if (question.mode === "radio") {
-      const choice = selected[0];
-      if (choice && correctOptions.includes(choice)) {
-        return 1;
+    let score = 0,
+      correctCount = 0,
+      wrongCount = 0,
+      skippedCount = 0;
+
+    const perQuestionResults = questions.map((q) => {
+      const correctIds = q.options
+        .filter((o) => o.isCorrect)
+        .map((o) => o.id);
+
+      const picked = selectedById[q.id] || [];
+      const pickedSet = new Set(picked);
+
+      let isCorrect = false;
+
+      if (picked.length === 0) {
+        skippedCount++;
+        score += QUIZ_CONFIG.scoring.skipped;
+      } else {
+        const isSameSize = picked.length === correctIds.length;
+        const allMatch = correctIds.every((id) => pickedSet.has(id));
+
+        if (isSameSize && allMatch) {
+          isCorrect = true;
+          correctCount++;
+          score += QUIZ_CONFIG.scoring.correct;
+        } else {
+          wrongCount++;
+          score += QUIZ_CONFIG.scoring.wrong;
+        }
       }
-      return -2;
+
+      return {
+        questionId: q.id,
+        questionText: q.question,
+        options: q.options,
+        correctOptionIds: correctIds,
+        selectedOptionIds: picked,
+        isCorrect,
+      };
+    });
+
+    const durationSeconds = Math.round(
+      (finishedAt - startedAt) / 1000
+    );
+
+    const payload = {
+      uid: user.uid,
+      email: user.email,
+      topics,
+      score,
+      totalQuestions,
+      correctCount,
+      wrongCount,
+      skippedCount,
+      startedAt,
+      finishedAt,
+      durationSeconds,
+      reason,
+      results: perQuestionResults,
+    };
+
+    try {
+      await addDoc(collection(db, "quizResults"), payload);
+    } catch (e) {
+      console.error("Error saving results:", e);
     }
 
-    if (question.mode === "check") {
-      const correctSet = new Set(correctOptions);
-      const selectedSet = new Set(selected);
-
-      const isCorrect =
-        correctSet.size === selectedSet.size &&
-        [...correctSet].every((id) => selectedSet.has(id));
-
-      return isCorrect ? 1 : -2;
-    }
-
-    return 0;
-  }
-
-  // ------------------------------
-  // Go to next question
-  // ------------------------------
-  function nextQuestion() {
-    const delta = getScoreDelta(q);
-    const newScore = score + delta;
-    setScore(newScore);
-    setSelected([]);
-
-    if (current + 1 < questions.length) {
-      setCurrent(current + 1);
-    } else {
-      finishQuiz(newScore);
-    }
-  }
-
-  // ------------------------------
-  // Skip current question (no score change)
-  // ------------------------------
-  function skipQuestion() {
-    setSelected([]);
-
-    if (current + 1 < questions.length) {
-      setCurrent(current + 1);
-    } else {
-      finishQuiz(score);
-    }
-  }
-
-  // ------------------------------
-  // Finish quiz: save to Firestore and navigate to Results
-  // ------------------------------
-  async function finishQuiz(finalScore) {
-    const user = auth.currentUser;
-
-    const total = questions.length;
-    const timeSpent = 300 - timeLeft;
-    const percentage = Math.max(0, ((finalScore / total) * 100).toFixed(0));
-
-    // Save result to Firestore only if user is logged in
-    if (user) {
-      try {
-        await addDoc(collection(db, "results"), {
-          uid: user.uid,
-          score: finalScore,
-          total,
-          percentage: Number(percentage),
-          timeSpent,
-          createdAt: serverTimestamp(),
-        });
-      } catch (err) {
-        console.error("Error saving result:", err);
-      }
-    }
-
-    // Navigate to results page with state
     navigate("/results", {
+      replace: true,
       state: {
-        score: finalScore,
-        total,
-        timeSpent,
-        percentage,
+        ...payload,
+        startedAtLocal: startedAt.toISOString(),
+        finishedAtLocal: finishedAt.toISOString(),
       },
     });
+  };
+
+  // ---------------- RENDER ----------------
+  if (!user || !currentQuestion) {
+    return (
+      <div className="min-h-[calc(100vh-56px)] flex items-center justify-center text-gray-300 pt-20">
+        Loading quiz...
+      </div>
+    );
   }
 
-  // ------------------------------
-  // Format time MM:SS
-  // ------------------------------
-  function formatTime(sec) {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m}:${String(s).padStart(2, "0")}`;
-  }
-
-  // ------------------------------
-  // Render UI
-  // ------------------------------
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      {/* Top bar: question count + timer */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold">
-          Question {current + 1} / {questions.length}
-        </h2>
+    <div className="min-h-[calc(100vh-56px)] bg-[#03080B] text-white pt-24 pb-10 px-4 flex justify-center">
+      <div className="w-full max-w-3xl space-y-6">
+        
+        {/* TOP BAR */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex justify-between text-xs text-gray-400 mb-1">
+              <span>
+                Question {currentIndex + 1} / {totalQuestions}
+              </span>
+            </div>
+            <div className="h-2 rounded-full bg-gray-800 overflow-hidden">
+              <div
+                className="h-full bg-blue-500 transition-all"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
 
-        <div className="text-lg font-mono bg-gray-800 px-4 py-2 rounded">
-          ⏱ {formatTime(timeLeft)}
+          <div className="text-sm font-mono text-gray-200 text-right">
+            Time left:{" "}
+            <span className="font-semibold text-blue-400">
+              {formatTime(timeLeft)}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* Progress bar */}
-      <div className="w-full bg-gray-800 rounded h-3 mb-8">
-        <div
-          className="bg-blue-500 h-3 rounded transition-all"
-          style={{
-            width: `${((current + 1) / questions.length) * 100}%`,
-          }}
-        ></div>
-      </div>
+        {/* QUESTION */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+          <h2 className="text-base md:text-lg font-semibold">
+            {currentQuestion.question}
+          </h2>
 
-      {/* Question text */}
-      <h3 className="text-lg md:text-2xl font-semibold mb-6">{q.question}</h3>
+          <p className="text-xs text-gray-400">
+            Select all answers you believe are correct.
+          </p>
 
-      {/* Options */}
-      <div className="flex flex-col gap-4 mb-8">
-        {q.options.map((opt) => {
-          const isSelected = selected.includes(opt.id);
+          <div className="space-y-2 mt-2">
+            {currentQuestion.options.map((opt) => {
+              const picked = selectedById[currentQuestion.id] || [];
+              const isChecked = picked.includes(opt.id);
 
-          return (
+              return (
+                <label
+                  key={opt.id}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-700 bg-gray-950/60 hover:bg-gray-800/70 cursor-pointer text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-blue-500"
+                    checked={isChecked}
+                    onChange={() =>
+                      toggleOption(currentQuestion.id, opt.id)
+                    }
+                  />
+                  <span>{opt.text}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* NAVIGATION */}
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="flex gap-2">
+
+            {/* SKIP */}
             <button
-              key={opt.id}
-              onClick={() =>
-                q.mode === "radio"
-                  ? selectRadio(opt.id)
-                  : toggleCheckbox(opt.id)
-              }
-              className={`
-                text-left px-4 py-3 rounded-lg border transition
-                ${
-                  isSelected
-                    ? "bg-blue-500 border-blue-400 text-white"
-                    : "bg-gray-900 border-gray-700 hover:bg-gray-800"
-                }
-              `}
+              onClick={skipQuestion}
+              disabled={currentIndex === totalQuestions - 1}
+              className="px-6 py-2 rounded-md bg-gray-700 disabled:opacity-40"
             >
-              {opt.text}
+              Skip
             </button>
-          );
-        })}
-      </div>
 
-      {/* Bottom buttons */}
-      <div className="flex justify-between gap-4">
-        <button
-          onClick={skipQuestion}
-          className="px-4 py-2 bg-gray-700 rounded hover:bg-gray-600 transition"
-        >
-          Skip
-        </button>
+            {/* NEXT */}
+            {currentIndex < totalQuestions - 1 && (
+              <button
+                onClick={goNext}
+                className="px-6 py-2 rounded-md bg-blue-600 hover:bg-blue-700 transition"
+              >
+                Next
+              </button>
+            )}
 
-        <button
-          onClick={nextQuestion}
-          className="px-6 py-2 bg-blue-500 rounded hover:bg-blue-400 transition"
-        >
-          {current + 1 === questions.length ? "Finish" : "Next"}
-        </button>
+            {/* SUBMIT */}
+            {currentIndex === totalQuestions - 1 && (
+              <button
+                onClick={() => handleSubmit("manual")}
+                className="px-6 py-2 rounded-md bg-green-600 hover:bg-green-700 transition"
+              >
+                Submit Quiz
+              </button>
+            )}
+
+          </div>
+        </div>
+
       </div>
     </div>
   );

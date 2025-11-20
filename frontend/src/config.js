@@ -1,13 +1,29 @@
-// Global quiz configuration
+// src/config.js
+import buildPool from "../../frontend/src/utils/mergeQuestions";
+import git1 from "../../quiz/git1.json";
+import git2 from "../../quiz/git2.json";
+import linux1 from "../../quiz/linux1.json";
+import linux2 from "../../quiz/linux2.json";
+import q1 from "../../quiz/q1.json";
+
+export const QUESTION_POOLS = {
+  git: buildPool("git", [git1, git2]),
+  linux: buildPool("linux", [linux1, linux2]),
+  q: buildPool("q", [q1]),
+};
+
+export const TOPICS = [
+  { id: "git", label: "Git" },
+  { id: "linux", label: "Linux" },
+  { id: "q", label: "q / kdb+" },
+];
+
 export const QUIZ_CONFIG = {
-    // How many questions per quiz (max; if JSON has fewer, we'll use all)
-    QUESTIONS_PER_QUIZ: 30,
-  
-    // Seconds per question (N), total time = N * numberOfQuestions
-    SECONDS_PER_QUESTION: 10,
-  
-    // Scoring scheme (can be changed later)
-    SCORE_CORRECT: 1,
-    SCORE_WRONG: -2,
-  };
-  
+  questionsPerAttempt: 30,
+  timePerQuestionSeconds: 10,
+  scoring: {
+    correct: 1,
+    wrong: -2,
+    skipped: 0,
+  },
+};

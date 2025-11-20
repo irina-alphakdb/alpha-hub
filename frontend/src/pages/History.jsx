@@ -1,128 +1,136 @@
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import {
   collection,
   query,
   where,
   orderBy,
-  onSnapshot,
+  getDocs,
 } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import { TOPICS } from "../config";
 
 export default function History() {
-  const [results, setResults] = useState([]);
+  const [user, setUser] = useState(null);
+  const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const navigate = useNavigate();
+
+  // AUTH
   useEffect(() => {
-    let unsubscribeAuth;
-    let unsubscribeResults;
-
-    // Watch auth state
-    unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        setResults([]);
-        setLoading(false);
-        return;
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (!u) {
+        navigate("/", { replace: true });
+      } else {
+        setUser(u);
       }
-
-      // Query user's results ordered by createdAt desc
-      const q = query(
-        collection(db, "results"),
-        where("uid", "==", user.uid),
-        orderBy("createdAt", "desc")
-      );
-
-      unsubscribeResults = onSnapshot(
-        q,
-        (snapshot) => {
-          const items = snapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
-              id: doc.id,
-              ...data,
-            };
-          });
-          setResults(items);
-          setLoading(false);
-        },
-        (error) => {
-          console.error("Error loading history:", error);
-          setLoading(false);
-        }
-      );
     });
+    return () => unsub();
+  }, [navigate]);
 
-    return () => {
-      if (unsubscribeAuth) unsubscribeAuth();
-      if (unsubscribeResults) unsubscribeResults();
+  // LOAD HISTORY
+  useEffect(() => {
+    const fetch = async () => {
+      if (!user) return;
+
+      setLoading(true);
+
+      try {
+        const q = query(
+          collection(db, "quizResults"),
+          where("uid", "==", user.uid),
+          orderBy("startedAt", "desc")
+        );
+
+        const snap = await getDocs(q);
+
+        setAttempts(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      } catch (e) {
+        console.error("History load error:", e);
+      } finally {
+        setLoading(false);
+      }
     };
-  }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-[calc(100vh-64px)] flex items-center justify-center">
-        <p className="text-gray-400">Loading history...</p>
-      </div>
-    );
-  }
+    fetch();
+  }, [user]);
 
-  if (!results.length) {
-    return (
-      <div className="min-h-[calc(100vh-64px)] flex flex-col items-center justify-center text-center px-4">
-        <h2 className="text-2xl font-semibold mb-3">Quiz History</h2>
-        <p className="text-gray-400">
-          You haven't completed any quizzes yet.
-        </p>
-      </div>
-    );
-  }
+  if (!user) return null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6">
-      <h2 className="text-2xl font-semibold mb-6">Quiz History</h2>
+    <div className="min-h-[calc(100vh-56px)] bg-[#03080B] text-white pt-24 pb-10 px-4 flex justify-center">
+      <div className="w-full max-w-4xl">
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="bg-gray-900 border-b border-gray-700">
-              <th className="text-left px-3 py-2">Date</th>
-              <th className="text-left px-3 py-2">Score</th>
-              <th className="text-left px-3 py-2">Percent</th>
-              <th className="text-left px-3 py-2">Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map((r) => {
-              const date =
-                r.createdAt?.toDate
-                  ? r.createdAt.toDate().toLocaleString()
-                  : "—";
+        <h1 className="text-2xl font-bold mb-4">History</h1>
+        <p className="text-sm text-gray-300 mb-6">
+          All your quiz attempts are listed below.
+        </p>
 
-              const time = formatTime(r.timeSpent || 0);
+        {loading ? (
+          <p className="text-sm text-gray-400">Loading…</p>
+        ) : attempts.length === 0 ? (
+          <p className="text-sm text-gray-400">No attempts yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {attempts.map((a, i) => {
+              const topicNames = (a.topics || [])
+                .map((t) => TOPICS.find((x) => x.id === t)?.label || t)
+                .join(", ");
 
               return (
-                <tr
-                  key={r.id}
-                  className="border-b border-gray-800 hover:bg-gray-900"
+                <div
+                  key={a.id}
+                  className="bg-gray-900 border border-gray-800 rounded-lg p-3 text-sm flex flex-col md:flex-row md:items-center md:justify-between gap-2"
                 >
-                  <td className="px-3 py-2">{date}</td>
-                  <td className="px-3 py-2">
-                    {r.score} / {r.total}
-                  </td>
-                  <td className="px-3 py-2">{r.percentage}%</td>
-                  <td className="px-3 py-2">{time}</td>
-                </tr>
+                  <div>
+                    <p className="font-medium">
+                      Attempt #{attempts.length - i}
+                    </p>
+
+                    <p className="text-xs text-blue-300">
+                      Topics: {topicNames}
+                    </p>
+
+                    <p className="text-xs text-gray-400">
+                      {a.startedAt
+                        ? new Date(a.startedAt.seconds * 1000).toLocaleString()
+                        : "Unknown date"}
+                    </p>
+                  </div>
+
+                  <div className="text-xs text-gray-300 md:text-right space-y-1">
+                    <p>
+                      Score:{" "}
+                      <span className="font-semibold text-white">
+                        {a.score}
+                      </span>
+                    </p>
+
+                    <p>
+                      Correct:{" "}
+                      <span className="text-green-400">{a.correctCount}</span>
+                      {" · "}
+                      Wrong:{" "}
+                      <span className="text-red-400">{a.wrongCount}</span>
+                      {" · "}
+                      Skipped:{" "}
+                      <span className="text-yellow-300">
+                        {a.skippedCount}
+                      </span>
+                    </p>
+
+                    {a.durationSeconds != null && (
+                      <p>Duration: {a.durationSeconds}s</p>
+                    )}
+                  </div>
+                </div>
               );
             })}
-          </tbody>
-        </table>
+          </div>
+        )}
       </div>
     </div>
   );
-}
-
-function formatTime(sec) {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${String(s).padStart(2, "0")}`;
 }

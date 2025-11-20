@@ -1,23 +1,32 @@
+// src/components/ProtectedRoute.jsx
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
-import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../firebase";
+import { Navigate } from "react-router-dom";
 
 export default function ProtectedRoute({ children }) {
-  const [loading, setLoading] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(null);
+  const [user, setUser] = useState(undefined); // undefined = loading
 
   useEffect(() => {
-    const un = onAuthStateChanged(auth, (user) => {
-      setLoggedIn(!!user);
-      setLoading(false);
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u || null);
     });
-    return () => un();
+    return () => unsub();
   }, []);
 
-  if (loading) return null;
+  // Still checking auth state
+  if (user === undefined) {
+    return (
+      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center text-gray-300">
+        Loading...
+      </div>
+    );
+  }
 
-  if (!loggedIn) return <Navigate to="/" replace />;
+  // Not logged in → redirect to login
+  if (!user) {
+    return <Navigate to="/" replace />;
+  }
 
   return children;
 }
