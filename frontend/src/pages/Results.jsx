@@ -32,6 +32,12 @@ export default function Results() {
     topics = [],
   } = state;
 
+  const formatDuration = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
   const topicNames = topics
     .map((t) => TOPICS.find((x) => x.id === t)?.label || t)
     .join(", ");
@@ -73,11 +79,13 @@ export default function Results() {
             {finishedAtLocal && (
               <p>Finished: {new Date(finishedAtLocal).toLocaleString()}</p>
             )}
-            {durationSeconds != null && <p>Duration: {durationSeconds}s</p>}
+            {durationSeconds != null && (
+              <p>Duration: {formatDuration(durationSeconds)}</p>
+            )}
           </div>
         </div>
 
-        {/* REVIEW SECTION */}
+        {/* REVIEW */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
           <h2 className="text-lg font-semibold">Review your answers</h2>
 
@@ -151,7 +159,6 @@ export default function Results() {
 
         {/* ACTIONS */}
         <div className="flex justify-end gap-3">
-
           <button
             onClick={() => navigate("/quiz", { state: { topics } })}
             className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm"
@@ -165,7 +172,6 @@ export default function Results() {
           >
             Back to Home
           </button>
-
         </div>
       </div>
     </div>

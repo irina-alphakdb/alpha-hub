@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
@@ -28,7 +27,7 @@ export default function Home() {
   const [selectedTopics, setSelectedTopics] = useState(["git", "linux", "q"]);
   const navigate = useNavigate();
 
-  // --------------- AUTH ----------------
+  // ---------------- AUTH ----------------
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       if (!u) {
@@ -45,7 +44,7 @@ export default function Home() {
     return () => unsub();
   }, [navigate]);
 
-  // --------------- LOAD LAST RESULT ----------------
+  // ---------------- LOAD LAST RESULT ----------------
   useEffect(() => {
     const load = async () => {
       if (!user) return;
@@ -77,11 +76,13 @@ export default function Home() {
 
   if (!user) return null;
 
-  // Convert total seconds → minutes
+  // Format total time (global timer)
   const totalSeconds =
     QUIZ_CONFIG.questionsPerAttempt * QUIZ_CONFIG.timePerQuestionSeconds;
 
-  const totalMinutes = Math.round(totalSeconds / 60);
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  const formattedTotalTime = `${m}:${s.toString().padStart(2, "0")}`;
 
   const toggleTopic = (id) => {
     setSelectedTopics((prev) =>
@@ -95,7 +96,7 @@ export default function Home() {
 
   return (
     <div className="min-h-[calc(100vh-56px)] bg-[#03080B] text-white flex flex-col items-center justify-start px-4 pt-24 pb-16">
-      <div className="max-w-3xl w-full flex flex-col items-center text-center gap-10">
+      <div className="max-w-3xl w-full flex flex-col items-center text-center gap-6">
 
         {/* WELCOME */}
         <div>
@@ -103,15 +104,15 @@ export default function Home() {
             Welcome, {user.displayName}!
           </h1>
 
-          {/* Explanation block */}
-          <p className="text-sm md:text-base text-gray-300 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm md:text-base text-gray-300 max-w-3xl mx-auto mt-6">
             You will receive a random selection of{" "}
-            <span className="font-semibold">{QUIZ_CONFIG.questionsPerAttempt}</span>{" "}
-            questions from the topics you choose below.  
-            Each question has{" "}
-            <span className="font-semibold">{QUIZ_CONFIG.timePerQuestionSeconds}s</span>{" "}
-            to answer — that's around{" "}
-            <span className="font-semibold">{totalMinutes} minutes total</span>.
+            <span className="font-bold">{QUIZ_CONFIG.questionsPerAttempt}{" "}
+            questions</span> from the topics you choose below.
+            <br /><br />
+            You will have{" "}
+            <span className="font-bold">{formattedTotalTime}</span> total time
+            to complete the quiz. You may take longer on some questions and less on
+            others — the timer counts down overall, not per question.
             <br /><br />
             Scoring:
             <br />
@@ -123,9 +124,9 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Last Result */}
+        {/* LAST RESULT */}
         <div className="w-full max-w-xl bg-gray-900 border border-gray-800 rounded-xl p-2 text-left">
-          <h2 className="text-sm font-semibold text-gray-200 mb-2">
+          <h2 className="font-semibold text-gray-200 m-2">
             Last attempt
           </h2>
 
@@ -136,7 +137,7 @@ export default function Home() {
               You haven't taken the quiz yet.
             </p>
           ) : (
-            <div className="text-xs text-gray-300 space-y-1">
+            <div className="text-xs text-gray-300 space-y-1 m-2">
               <p>
                 Score:{" "}
                 <span className="font-semibold text-white">
@@ -160,7 +161,7 @@ export default function Home() {
               </p>
 
               {lastResult.startedAt && (
-                <p className="text-[11px] text-gray-400">
+                <p className="text-gray-400">
                   Taken at:{" "}
                   {new Date(lastResult.startedAt.seconds * 1000).toLocaleString()}
                 </p>
@@ -169,9 +170,9 @@ export default function Home() {
           )}
         </div>
 
-        {/* Topic selection */}
+        {/* TOPIC SELECTION */}
         <div className="bg-gray-900 p-4 rounded-lg border border-gray-700 w-full max-w-xl">
-          <h3 className="text-sm font-semibold mb-2 text-gray-200">
+          <h3 className="font-semibold mb-2 text-gray-200">
             Select topics
           </h3>
 
