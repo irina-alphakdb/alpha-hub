@@ -10,6 +10,8 @@ import {
   XMarkIcon,
   ArrowLeftOnRectangleIcon,
 } from "@heroicons/react/24/outline";
+import logo from "../assets/alpha-kdb-logo.png";
+
 
 export default function Navbar() {
   const [user, setUser] = useState(null);
@@ -36,11 +38,16 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 w-full bg-gray-900 border-b border-gray-800 z-20">
       <div className="mx-auto flex items-center justify-between px-4 py-3">
         {/* Logo */}
-        <Link
+        <Link           
           to={user ? "/home" : "/"}
-          className="text-lg font-semibold text-white"
+          className="flex items-center my-2" 
         >
-          Alpha<span className="text-blue-400">Hub</span>
+          <img
+            src={logo}
+            alt="AlphaKDB logo"
+            className="h-8 w-auto object-contain"
+            loading="eager"
+          />
         </Link>
 
         {/* Mobile burger (only when logged in) */}
