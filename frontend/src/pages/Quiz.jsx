@@ -9,19 +9,15 @@ export default function Quiz() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // topics were selected on Home page
   const topics = location.state?.topics || ["git", "linux", "q"];
 
   // ---------------- STATE ----------------
   const [user, setUser] = useState(null);
   const [questions, setQuestions] = useState([]);
-
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedById, setSelectedById] = useState({});
 
-  const [selectedById, setSelectedById] = useState({}); // { qID: [optIDs] }
-
-  const [timeLeft, setTimeLeft] = useState(0); // per-question timer
-  const perQuestionTime = QUIZ_CONFIG.timePerQuestionSeconds;
+  const [globalTimeLeft, setGlobalTimeLeft] = useState(null);
 
   const [startedAt, setStartedAt] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,27 +25,32 @@ export default function Quiz() {
   // ---------------- AUTH ----------------
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
-      if (!u) {
-        navigate("/", { replace: true });
-      } else {
-        setUser(u);
-      }
+      if (!u) navigate("/", { replace: true });
+      else setUser(u);
     });
     return () => unsub();
   }, [navigate]);
 
   // ---------------- PREPARE QUESTIONS ----------------
   useEffect(() => {
-    // Build pool based on selected topics
     let pool = [];
     topics.forEach((t) => {
       if (QUESTION_POOLS[t]) pool.push(...QUESTION_POOLS[t]);
     });
 
-    // Shuffle
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    // Deduplicate by lowercase text or ID
+    const map = new Map();
+    pool.forEach((q) => {
+      const key = (q.id || q.question || "").toString().trim().toLowerCase();
+      if (!map.has(key)) map.set(key, q);
+    });
 
-    // Limit count
+    const uniqueQuestions = Array.from(map.values());
+
+    // Shuffle
+    const shuffled = [...uniqueQuestions].sort(() => Math.random() - 0.5);
+
+    // Limit
     const sliceCount = Math.min(
       QUIZ_CONFIG.questionsPerAttempt,
       shuffled.length
@@ -71,37 +72,31 @@ export default function Quiz() {
 
     setQuestions(normalized);
     setStartedAt(new Date());
+
+    // GLOBAL TIMER = T × N
+    const total = QUIZ_CONFIG.timePerQuestionSeconds * sliceCount;
+    setGlobalTimeLeft(total);
   }, [topics]);
 
   const totalQuestions = questions.length;
   const currentQuestion = questions[currentIndex];
 
-  // ---------------- TIMER ----------------
+  // ---------------- GLOBAL TIMER ----------------
   useEffect(() => {
-    if (!currentQuestion) return;
+    if (globalTimeLeft === null) return;
+    if (globalTimeLeft <= 0) return;
 
-    setTimeLeft(perQuestionTime);
-
-    const id = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(id);
-
-          if (currentIndex === totalQuestions - 1) {
-            handleSubmit("time");
-          } else {
-            setCurrentIndex((i) =>
-              Math.min(i + 1, totalQuestions - 1)
-            );
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
+    const interval = setInterval(() => {
+      setGlobalTimeLeft((t) => (t > 0 ? t - 1 : 0));
     }, 1000);
 
-    return () => clearInterval(id);
-  }, [currentIndex, totalQuestions, perQuestionTime]);
+    return () => clearInterval(interval);
+  }, [globalTimeLeft]);
+
+  // Auto-submit when timer hits 0
+  useEffect(() => {
+    if (globalTimeLeft === 0) handleSubmit("timeout");
+  }, [globalTimeLeft]);
 
   // ---------------- OPTION SELECT ----------------
   const toggleOption = (questionId, optionId) => {
@@ -124,22 +119,23 @@ export default function Quiz() {
     return Math.round(((currentIndex + 1) / totalQuestions) * 100);
   }, [currentIndex, totalQuestions]);
 
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
+  const formatTime = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
+  // ---------------- NAVIGATION ----------------
   const goNext = () => {
-    if (currentIndex < totalQuestions - 1) {
-      setCurrentIndex((i) => i + 1);
-    }
+    if (currentIndex < totalQuestions - 1) setCurrentIndex((i) => i + 1);
+  };
+
+  const goBack = () => {
+    if (currentIndex > 0) setCurrentIndex((i) => i - 1);
   };
 
   const skipQuestion = () => {
-    if (currentIndex < totalQuestions - 1) {
-      setCurrentIndex((i) => i + 1);
-    }
+    if (currentIndex < totalQuestions - 1) setCurrentIndex((i) => i + 1);
   };
 
   // ---------------- SUBMIT ----------------
@@ -259,18 +255,18 @@ export default function Quiz() {
           <div className="text-sm font-mono text-gray-200 text-right">
             Time left:{" "}
             <span className="font-semibold text-blue-400">
-              {formatTime(timeLeft)}
+              {formatTime(globalTimeLeft)}
             </span>
           </div>
         </div>
 
         {/* QUESTION */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
-          <h2 className="text-base md:text-lg font-semibold">
+          <h2 className="text-base md:text-lg font-mono whitespace-pre-wrap">
             {currentQuestion.question}
           </h2>
 
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 font-mono">
             Select all answers you believe are correct.
           </p>
 
@@ -282,15 +278,13 @@ export default function Quiz() {
               return (
                 <label
                   key={opt.id}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-700 bg-gray-950/60 hover:bg-gray-800/70 cursor-pointer text-sm"
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg border border-gray-700 bg-gray-950/60 hover:bg-gray-800/70 cursor-pointer text-sm font-mono whitespace-pre-wrap"
                 >
                   <input
                     type="checkbox"
                     className="h-4 w-4 accent-blue-500"
                     checked={isChecked}
-                    onChange={() =>
-                      toggleOption(currentQuestion.id, opt.id)
-                    }
+                    onChange={() => toggleOption(currentQuestion.id, opt.id)}
                   />
                   <span>{opt.text}</span>
                 </label>
@@ -303,7 +297,14 @@ export default function Quiz() {
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           <div className="flex gap-2">
 
-            {/* SKIP */}
+            <button
+              onClick={goBack}
+              disabled={currentIndex === 0}
+              className="px-6 py-2 rounded-md bg-gray-700 disabled:opacity-40"
+            >
+              Back
+            </button>
+
             <button
               onClick={skipQuestion}
               disabled={currentIndex === totalQuestions - 1}
@@ -312,7 +313,6 @@ export default function Quiz() {
               Skip
             </button>
 
-            {/* NEXT */}
             {currentIndex < totalQuestions - 1 && (
               <button
                 onClick={goNext}
@@ -322,7 +322,6 @@ export default function Quiz() {
               </button>
             )}
 
-            {/* SUBMIT */}
             {currentIndex === totalQuestions - 1 && (
               <button
                 onClick={() => handleSubmit("manual")}

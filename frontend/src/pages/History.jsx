@@ -18,6 +18,12 @@ export default function History() {
 
   const navigate = useNavigate();
 
+  const formatDuration = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
   // AUTH
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -122,7 +128,7 @@ export default function History() {
                     </p>
 
                     {a.durationSeconds != null && (
-                      <p>Duration: {a.durationSeconds}s</p>
+                      <p>Duration: {formatDuration(a.durationSeconds)}</p>
                     )}
                   </div>
                 </div>
