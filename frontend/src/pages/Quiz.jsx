@@ -262,11 +262,11 @@ export default function Quiz() {
 
         {/* QUESTION */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
-          <h2 className="text-base md:text-lg font-mono whitespace-pre-wrap">
+          <h2 className="text-base md:text-lg whitespace-pre-wrap">
             {currentQuestion.question}
           </h2>
 
-          <p className="text-xs text-gray-400 font-mono">
+          <p className="text-xs text-gray-400">
             Select all answers you believe are correct.
           </p>
 
