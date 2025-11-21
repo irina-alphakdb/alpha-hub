@@ -118,7 +118,7 @@ export default function Home() {
             <br />
             • <span className="text-green-400 font-semibold">+1 point</span> for each correct answer  
             <br />
-            • <span className="text-red-400 font-semibold">-2 points</span> for a wrong answer  
+            • <span className="text-red-400 font-semibold">-1 point</span> for a wrong answer  
             <br />
             • <span className="text-yellow-300 font-semibold">0 points</span> for skipping  
           </p>
